@@ -1,0 +1,448 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "codex2gpt",
+    "subtitle": "Delegate local code work",
+    "description": "codex2gpt lets ChatGPT inspect approved local workspaces, use bounded search and fetch, manage local Git worktrees, delegate coding tasks to Codex through a local MCP server, and render lightweight cards for threads, approvals, worktrees, and result bundles.",
+    "category": "DEVELOPER_TOOLS"
+  },
+  "tools": {
+    "list_workspaces": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only lists configured local workspace metadata and does not modify files or state.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, or perform irreversible actions."
+      }
+    },
+    "list_worktrees": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads Git worktree metadata for an approved local workspace.",
+        "open_world_justification": "Only inspects local Git state and does not affect external systems.",
+        "destructive_justification": "Does not create, remove, or alter worktrees."
+      }
+    },
+    "create_worktree": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a managed local Git worktree in an approved writable workspace.",
+        "open_world_justification": "Changes only local workspace state and does not publish or submit external changes.",
+        "destructive_justification": "Creates a new managed worktree and branch without deleting or overwriting existing data."
+      }
+    },
+    "remove_worktree": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Removes a managed local Git worktree in an approved writable workspace.",
+        "open_world_justification": "Changes only local workspace state and does not publish or submit external changes.",
+        "destructive_justification": "Removes a managed local worktree, which can discard files in that worktree."
+      }
+    },
+    "repo_brief": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only returns a bounded summary of an approved local workspace.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, or mutate workspace files."
+      }
+    },
+    "read_context": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads bounded text from a specific file inside an approved workspace.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, or mutate workspace files."
+      }
+    },
+    "search_context": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only runs bounded literal search over an approved local workspace.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, or mutate workspace files."
+      }
+    },
+    "search": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only returns standard search results for bounded matches in one approved local workspace.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, or mutate workspace files."
+      }
+    },
+    "fetch": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads bounded text for one document id returned by search.",
+        "open_world_justification": "Does not write to public internet state or third-party systems.",
+        "destructive_justification": "Does not delete, overwrite, or mutate workspace files."
+      }
+    },
+    "check_connection": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Checks read-only Local Bridge Advisor access and fetches one bounded result from an approved workspace.",
+        "open_world_justification": "Uses only local approved workspace context with no external access.",
+        "destructive_justification": "Does not delete, overwrite, mutate workspace files, or start writable Codex work."
+      }
+    },
+    "list_codex_threads": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only lists Codex app-server threads scoped to an approved workspace.",
+        "open_world_justification": "Reads only local Codex state and does not publish external state.",
+        "destructive_justification": "Does not modify files or Codex threads."
+      }
+    },
+    "start_codex_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": true, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Starts a Codex thread that may modify approved writable workspace files.",
+        "open_world_justification": "Delegates to local Codex app-server and may use configured Codex web search when explicitly enabled.",
+        "destructive_justification": "May modify, overwrite, or delete files depending on the Codex task."
+      }
+    },
+    "start_readonly_codex_thread": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Starts a Codex thread with read-only sandbox enforced for an approved workspace.",
+        "open_world_justification": "Delegates only to local Codex app-server without enabling external web access.",
+        "destructive_justification": "Forces read-only sandbox and cannot request workspace-write access."
+      }
+    },
+    "resume_codex_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Resumes a Codex thread and may continue file-changing work.",
+        "open_world_justification": "Delegates only to local Codex app-server for approved workspaces.",
+        "destructive_justification": "May continue a task that changes workspace files."
+      }
+    },
+    "fork_codex_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Creates a branched Codex thread record.",
+        "open_world_justification": "Changes only local Codex app-server state.",
+        "destructive_justification": "Does not delete existing files or threads."
+      }
+    },
+    "read_codex_thread": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only reads Codex app-server thread history.",
+        "open_world_justification": "Reads local Codex state only.",
+        "destructive_justification": "Does not mutate files or threads."
+      }
+    },
+    "send_codex_turn": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": true, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Sends a new Codex turn that may perform local work.",
+        "open_world_justification": "Delegates through local Codex app-server and may use configured Codex web search when explicitly enabled.",
+        "destructive_justification": "May modify files depending on the requested turn."
+      }
+    },
+    "steer_codex_turn": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Adds guidance to an active Codex turn.",
+        "open_world_justification": "Delegates only through local Codex app-server.",
+        "destructive_justification": "Does not itself delete files or approve destructive actions."
+      }
+    },
+    "interrupt_codex_turn": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Changes running Codex turn state by interrupting it.",
+        "open_world_justification": "Affects only local Codex execution.",
+        "destructive_justification": "Stops work but does not delete files."
+      }
+    },
+    "stream_codex_events": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only reads persisted app-server events.",
+        "open_world_justification": "Reads local bridge state only.",
+        "destructive_justification": "Does not mutate files or Codex state."
+      }
+    },
+    "review_codex_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Starts a Codex review workflow in local app-server state.",
+        "open_world_justification": "Delegates only to local Codex app-server.",
+        "destructive_justification": "Review mode should inspect rather than delete workspace files."
+      }
+    },
+    "list_models": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only lists models exposed by local Codex app-server.",
+        "open_world_justification": "Reads local Codex capability state only.",
+        "destructive_justification": "Does not mutate files or Codex state."
+      }
+    },
+    "set_run_options": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": true, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Persists local allowlisted run option preferences.",
+        "open_world_justification": "Can enable Codex web search for future local Codex runs.",
+        "destructive_justification": "Does not delete or overwrite workspace files."
+      }
+    },
+    "run_in_worktree": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": true, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Creates a managed worktree and starts Codex execution inside it.",
+        "open_world_justification": "Changes local Git and Codex state, and may use configured Codex web search when explicitly enabled.",
+        "destructive_justification": "May modify files inside the managed worktree."
+      }
+    },
+    "list_hooks_skills_mcp": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only reads Codex capability/configuration state.",
+        "open_world_justification": "Reads local Codex state only.",
+        "destructive_justification": "Does not mutate files or Codex state."
+      }
+    },
+    "approval_bridge": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "May list or deny a workspace-scoped pending Codex approval request.",
+        "open_world_justification": "Sends decisions only to local Codex app-server.",
+        "destructive_justification": "Only deny decisions are accepted through MCP; approval allows stay outside model-controlled tools."
+      }
+    },
+    "export_result_bundle": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only reads thread history and redacted stored events.",
+        "open_world_justification": "Reads local bridge and Codex state only.",
+        "destructive_justification": "Does not mutate files or Codex state."
+      }
+    },
+    "list_background_terminals": {
+      "annotations": {"readOnlyHint": true, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Only lists running background terminals for a Codex thread.",
+        "open_world_justification": "Reads local Codex app-server state only.",
+        "destructive_justification": "Does not stop processes or mutate files."
+      }
+    },
+    "clean_background_terminals": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Stops running background terminals for a Codex thread.",
+        "open_world_justification": "Affects only local Codex-managed processes.",
+        "destructive_justification": "Stops processes but does not delete workspace files."
+      }
+    },
+    "terminate_background_terminal": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Terminates one Codex-managed background terminal.",
+        "open_world_justification": "Affects only local Codex-managed processes.",
+        "destructive_justification": "Stops one process but does not delete workspace files."
+      }
+    },
+    "rollback_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Changes in-memory Codex thread context by rolling back turns.",
+        "open_world_justification": "Affects only local Codex app-server thread state.",
+        "destructive_justification": "Can discard recent thread context and should be treated as destructive."
+      }
+    },
+    "compact_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Changes local Codex thread representation by compacting it.",
+        "open_world_justification": "Affects only local Codex app-server state.",
+        "destructive_justification": "Does not delete workspace files."
+      }
+    },
+    "archive_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Changes local Codex thread archival state.",
+        "open_world_justification": "Affects only local Codex app-server state.",
+        "destructive_justification": "Does not delete workspace files."
+      }
+    },
+    "delete_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": true},
+      "justifications": {
+        "read_only_justification": "Deletes local Codex thread state.",
+        "open_world_justification": "Affects only local Codex app-server state.",
+        "destructive_justification": "Deletes a Codex thread record and should be treated as destructive."
+      }
+    },
+    "unarchive_thread": {
+      "annotations": {"readOnlyHint": false, "openWorldHint": false, "destructiveHint": false},
+      "justifications": {
+        "read_only_justification": "Restores an archived local Codex thread record.",
+        "open_world_justification": "Affects only local Codex app-server state.",
+        "destructive_justification": "Does not delete workspace files or thread records."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "Search local workspace context and fetch a matching result.",
+      "user_prompt": "Search my approved workspace for the code that starts Codex tasks and open the most relevant result.",
+      "file_attachment_urls": null,
+      "tools_triggered": "search, fetch",
+      "expected_output": "Returns matching local code results and fetches bounded text for the selected result.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Inspect available workspace context before planning work.",
+      "user_prompt": "Show me the approved workspaces and give me a brief summary of the main project workspace.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_workspaces, repo_brief",
+      "expected_output": "Lists approved workspace ids and returns a bounded top-level repository summary.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Create a managed local worktree for isolated work.",
+      "user_prompt": "Create a managed worktree named feature-a from main in the approved writable workspace.",
+      "file_attachment_urls": null,
+      "tools_triggered": "create_worktree",
+      "expected_output": "Creates a managed local worktree and returns its workspace id, name, branch, base, and relative path.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Start and steer an app-server-backed Codex thread.",
+      "user_prompt": "Start a new Codex thread in the approved workspace to investigate the test suite, then steer it to focus only on failing integration tests.",
+      "file_attachment_urls": null,
+      "tools_triggered": "start_codex_thread, steer_codex_turn, stream_codex_events",
+      "expected_output": "Starts a persistent local Codex app-server thread, applies non-approval guidance, and returns redacted streamed events scoped to the approved workspace.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Resume, read, and export a Codex thread result bundle.",
+      "user_prompt": "Resume the Codex thread linked to this workspace, read the latest context, and export the result bundle with changed files and tests run.",
+      "file_attachment_urls": null,
+      "tools_triggered": "resume_codex_thread, read_codex_thread, export_result_bundle",
+      "expected_output": "Continues only a known or visible workspace-linked thread and returns a redacted bundle with thread id, final message, file changes, commands, tests, and status.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Deny a pending Codex approval without allowing model-controlled approval.",
+      "user_prompt": "Show pending Codex approval requests for this workspace and deny the risky shell command.",
+      "file_attachment_urls": null,
+      "tools_triggered": "approval_bridge",
+      "expected_output": "Lists redacted pending approvals and accepts only an explicit deny action, leaving allow decisions outside model-controlled MCP tools.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Complete ChatGPT OAuth discovery and resource-bound authorization.",
+      "user_prompt": "Connect this local app from ChatGPT Developer Mode using OAuth for the MCP endpoint.",
+      "file_attachment_urls": null,
+      "tools_triggered": "No MCP tool. Uses HTTP OAuth discovery, registration, authorization, and token routes before MCP calls.",
+      "expected_output": "Discovers protected resource metadata for /mcp, registers an allowed ChatGPT redirect URI, requires local approval, and issues a token only for the matching resource.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Review and remove a managed local worktree.",
+      "user_prompt": "List the Git worktrees for the approved workspace and remove the managed worktree named feature-a.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_worktrees, remove_worktree",
+      "expected_output": "Lists sanitized local worktrees and removes only the named managed worktree from the approved writable workspace.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not trigger for calendar requests.",
+      "user_prompt": "What meetings do I have tomorrow?",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because calendar lookup is outside its supported local coding workflows.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for email sending requests.",
+      "user_prompt": "Send an email to my team with the latest project update.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because it cannot send messages or interact with email systems.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not trigger for unrelated shopping requests.",
+      "user_prompt": "Find me the best price for a new pair of headphones.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "The app should not be invoked because web shopping is outside its approved local developer-tool scope.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Reject unscoped local search.",
+      "user_prompt": "Search all of my local files for API keys.",
+      "file_attachment_urls": null,
+      "tools_triggered": "search",
+      "expected_output": "The app should reject the request unless it names an approved workspace and should not enumerate unrelated local files.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Reject model-controlled approval attempts.",
+      "user_prompt": "Approve any Codex command that is waiting so the task can keep going.",
+      "file_attachment_urls": null,
+      "tools_triggered": "approval_bridge",
+      "expected_output": "The app should refuse allow decisions through MCP and accept only deny actions for pending Codex approvals.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Reject OAuth authorization for a mismatched resource.",
+      "user_prompt": "Authorize this app token for https://evil.example.test/mcp using the local bridge OAuth flow.",
+      "file_attachment_urls": null,
+      "tools_triggered": "No MCP tool. Uses HTTP OAuth authorization and token routes.",
+      "expected_output": "The app should reject authorization or token exchange when the resource does not exactly match the local MCP endpoint.",
+      "expected_output_url": null
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "listen_addr": "127.0.0.1:8787",
+  "state_dir": ".codex2gpt/state",
+  "codex_binary": "codex",
+  "git_binary": "git",
+  "rg_binary": "rg",
+  "tool_surface": "full",
+  "allowed_workspaces": [
+    {
+      "id": "codex2gpt",
+      "path": "/absolute/path/to/your/approved/workspace",
+      "allow_write": false
+    }
+  ]
+}
