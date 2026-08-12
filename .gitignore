@@ -1,0 +1,6 @@
+/target/
+__pycache__/
+*.py[cod]
+/.env
+/.codex2gpt/
+/.DS_Store
