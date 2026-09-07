@@ -68,6 +68,56 @@ fn healthz_returns_ok() {
     assert_eq!(healthz(), "ok");
 }
 
+#[tokio::test]
+async fn missing_or_blank_approval_token_keeps_oauth_disabled() {
+    for approval_token in [None, Some(""), Some(" \t\n ")] {
+        let mut state = HttpState::new(state_with_workspace(), "local-secret");
+        if let Some(token) = approval_token {
+            state = state.with_oauth_approval_token(token);
+        }
+        let metadata = codex2gpt::http::protected_resource_metadata_for_state(&state);
+        let response = call_router(
+            state.clone(),
+            Request::builder()
+                .uri("/oauth/authorize?response_type=code&client_id=test-client&redirect_uri=http%3A%2F%2F127.0.0.1%3A3000%2Fcallback&code_challenge=test-challenge&code_challenge_method=S256&resource=http%3A%2F%2F127.0.0.1%3A8787%2Fmcp")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert!(metadata.get("authorization_servers").is_none());
+        let registration = handle_client_registration(
+            &state,
+            ClientRegistrationRequest {
+                redirect_uris: vec!["http://127.0.0.1:3000/callback".to_owned()],
+            },
+        );
+        assert_eq!(registration.0, StatusCode::BAD_REQUEST);
+    }
+}
+
+#[test]
+fn nonblank_approval_token_is_trimmed_and_requires_approval() {
+    let state = HttpState::new(state_with_workspace(), "local-secret")
+        .with_oauth_approval_token("  approve-me \n");
+    let mut request = AuthorizeRequest {
+        response_type: "code".to_owned(),
+        client_id: "test-client".to_owned(),
+        redirect_uri: "http://127.0.0.1:3000/callback".to_owned(),
+        code_challenge: "test-challenge".to_owned(),
+        code_challenge_method: "S256".to_owned(),
+        state: None,
+        resource: Some("http://127.0.0.1:8787/mcp".to_owned()),
+        approval_token: String::new(),
+    };
+    assert_eq!(
+        handle_authorize_request(&state, request.clone()).0,
+        StatusCode::UNAUTHORIZED
+    );
+    request.approval_token = "approve-me".to_owned();
+    assert_eq!(handle_authorize_request(&state, request).0, StatusCode::OK);
+}
+
 #[test]
 fn http_json_rpc_delegates_to_mcp_handler() {
     let response = handle_http_json_rpc(

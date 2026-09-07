@@ -4,3 +4,4 @@ __pycache__/
 /.env
 /.codex2gpt/
 /.DS_Store
+/docs/dependency-review.md

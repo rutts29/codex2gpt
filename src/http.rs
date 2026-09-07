@@ -45,7 +45,8 @@ impl HttpState {
     }
 
     pub fn with_oauth_approval_token(mut self, token: &str) -> Self {
-        self.oauth_approval_gate = Some(BearerGate::new(token));
+        let token = token.trim();
+        self.oauth_approval_gate = (!token.is_empty()).then(|| BearerGate::new(token));
         self
     }
 
