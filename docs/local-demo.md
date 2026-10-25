@@ -3,34 +3,27 @@
 This guide demonstrates the local bridge without hosting it. It does not start
 a Cloudflare Tunnel or connect a ChatGPT app.
 
-## Fixture-backed evidence
+## Local tests
 
-Run the offline test suite:
+With the locked dependencies cached locally, run the offline test suite:
 
 ```sh
-cargo test --offline
+cargo test --locked --offline
 ```
 
 These tests exercise JSON-RPC routing, OAuth and PKCE handling, workspace
-policy, worktrees, and app-server message handling. They use fake Codex
-app-server, Git, and ripgrep executables, so a passing result proves the bridge
-logic but not compatibility with an installed Codex release.
+policy, worktrees, and app-server message handling. They supply local Codex
+app-server, Git, and ripgrep fixtures for repeatable tests.
 
 ## Live local smoke
 
-With Codex installed and an approved workspace configured, start the bridge on
-loopback only:
+Follow [Run locally](../README.md#run-locally) to configure an approved
+workspace, retain the session tokens, and start the bridge on loopback. Run the
+requests from that same terminal so the Bearer token is available.
 
-```sh
-CODEX2GPT_BEARER_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_OAUTH_APPROVAL_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_BASE_URL="http://127.0.0.1:8787" \
-  cargo run -- serve --config codex2gpt.example.json
-```
-
-In another terminal, use the bearer token from that command to request
-`/healthz` and `tools/list` as shown in [live-test.md](live-test.md). This
-validates the running local server and the installed Codex app-server boundary.
+`/healthz` and `tools/list` check the running server and tool discovery without
+starting a Codex task. The [connection guide](live-test.md) adds OAuth and
+widget-resource checks.
 
 ## Hosted ChatGPT integration
 

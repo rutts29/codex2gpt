@@ -1,18 +1,13 @@
 # Live Test Runbook
 
-Use this only when you are ready to expose the local bridge through a temporary
-public Cloudflare Tunnel.
+Check the local server first, then connect ChatGPT through a temporary HTTPS
+tunnel when ready.
 
 ## Local Smoke
 
-```sh
-CODEX2GPT_BEARER_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_OAUTH_APPROVAL_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_BASE_URL="http://127.0.0.1:8787" \
-  cargo run -- serve --config codex2gpt.example.json
-```
-
-In another terminal:
+Follow [Run locally](../README.md#run-locally) to configure and start the bridge.
+Keep using that same terminal so the exported tokens and `bridge_pid` remain
+available:
 
 ```sh
 curl --silent --show-error http://127.0.0.1:8787/healthz
@@ -70,20 +65,24 @@ tool should have `readOnlyHint: true`, `destructiveHint: false`, and
 
 ## Cloudflare Tunnel
 
-Start the tunnel first and copy the generated `https://...trycloudflare.com`
-URL:
+Start the tunnel in another terminal and copy the generated
+`https://...trycloudflare.com` URL:
 
 ```sh
 cloudflared tunnel --url http://127.0.0.1:8787 --no-autoupdate
 ```
 
-Restart the bridge with that URL as `CODEX2GPT_BASE_URL`:
+In the original bridge terminal, stop the local smoke server and restart it
+with fresh tokens and that URL as `CODEX2GPT_BASE_URL`:
 
 ```sh
-CODEX2GPT_BEARER_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_OAUTH_APPROVAL_TOKEN="$(openssl rand -hex 32)" \
-CODEX2GPT_BASE_URL="https://YOUR-TUNNEL.trycloudflare.com" \
-  cargo run -- serve --config codex2gpt.example.json
+kill "$bridge_pid"
+wait "$bridge_pid"
+export CODEX2GPT_BEARER_TOKEN="$(openssl rand -hex 32)"
+export CODEX2GPT_OAUTH_APPROVAL_TOKEN="$(openssl rand -hex 32)"
+export CODEX2GPT_BASE_URL="https://YOUR-TUNNEL.trycloudflare.com"
+./target/debug/codex2gpt serve --config .codex2gpt/config.json &
+bridge_pid=$!
 ```
 
 Then connect ChatGPT Developer Mode to:
@@ -92,8 +91,15 @@ Then connect ChatGPT Developer Mode to:
 https://YOUR-TUNNEL.trycloudflare.com/mcp
 ```
 
-Only approve OAuth with the local `CODEX2GPT_OAUTH_APPROVAL_TOKEN` while you are
-actively testing. Stop both processes as soon as the test is complete.
+When the authorization page asks for the local approval token, display it in
+the original terminal and paste it into that page:
+
+```sh
+printf '%s\n' "$CODEX2GPT_OAUTH_APPROVAL_TOKEN"
+```
+
+Keep this token private. Stop the bridge with `kill "$bridge_pid"` and stop
+the tunnel in its terminal when finished.
 
 ## Security Notes
 
