@@ -163,4 +163,4 @@ the Cargo dependency gates for now.
 Inspired by DevSpace's workspace, worktree, and UI primitives. Here, ChatGPT
 plans and reviews while Codex remains the local executor.
 
-Shared for others to run, study, and adapt. Licensed under [MIT](LICENSE).
+Shared for others to run, study, and adapt. Licensed under the [Apache License 2.0](LICENSE).
